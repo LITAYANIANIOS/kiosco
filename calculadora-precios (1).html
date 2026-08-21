@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Calculadora de Precios — Lita &amp; Añaños</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Montserrat:wght@600;700;800;900&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f5f0e2;
+    --paper-2:#efe8d4;
+    --ink:#232c42;
+    --ink-soft:#5b6478;
+    --rule:#c65b4e;
+    --rule-faint:#e3d9c2;
+    --marker:#f2c230;
+    --marker-ink:#5c4400;
+    --green:#3d6b52;
+    --white:#fffdf7;
+    --radius:2px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    background-image:
+      linear-gradient(var(--rule-faint) 1px, transparent 1px);
+    background-size: 100% 34px;
+    background-position: 0 92px;
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    min-height:100vh;
+    padding: 0 0 60px 0;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{
+    max-width:1100px;
+    margin:0 auto;
+    padding: 28px 20px 0 20px;
+  }
+  header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:14px;
+    margin-bottom:22px;
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+  }
+  h1{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:22px;
+    font-weight:700;
+    margin:4px 0 0 0;
+    letter-spacing:-0.01em;
+  }
+  .stamp{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10px;
+    color:var(--rule);
+    border:1.5px solid var(--rule);
+    border-radius:3px;
+    padding:4px 8px;
+    transform:rotate(-3deg);
+    letter-spacing:.08em;
+    white-space:nowrap;
+  }
+
+  /* --- Tabs --- */
+  .tabs{
+    display:flex;
+    gap:8px;
+    margin-bottom:24px;
+  }
+  .tab-btn{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    font-weight:600;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    background:var(--paper-2);
+    color:var(--ink-soft);
+    border:1.5px solid var(--ink);
+    border-radius:var(--radius);
+    padding:10px 20px;
+    cursor:pointer;
+  }
+  .tab-btn.active{
+    background:var(--ink);
+    color:var(--paper);
+  }
+  .tab-panel{ display:none; }
+  .tab-panel.active{ display:block; }
+
+  /* --- Layout: 1 columna en celular, 2 columnas en monitor --- */
+  .layout{
+    display:block;
+  }
+  @media (min-width:860px){
+    .layout{
+      display:grid;
+      grid-template-columns: 400px 1fr;
+      gap:28px;
+      align-items:start;
+    }
+    .col-results{
+      position:sticky;
+      top:20px;
+    }
+  }
+
+  .card{
+    background:var(--white);
+    border:1.5px solid var(--ink);
+    border-radius:var(--radius);
+    position:relative;
+    padding:22px 22px 22px 30px;
+    margin-bottom:22px;
+    box-shadow:4px 4px 0 rgba(35,44,66,0.08);
+  }
+  .card::before{
+    content:"";
+    position:absolute;
+    left:14px;
+    top:0;
+    bottom:0;
+    width:1.5px;
+    background:var(--rule);
+    opacity:.55;
+  }
+  .card h2{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin:0 0 16px 0;
+  }
+
+  .field{
+    margin-bottom:16px;
+  }
+  .field label{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    font-size:13px;
+    font-weight:500;
+    color:var(--ink);
+    margin-bottom:6px;
+  }
+  .field label .hint{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--ink-soft);
+    font-weight:400;
+  }
+  .field input, .field select{
+    width:100%;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:17px;
+    font-weight:500;
+    padding:10px 12px;
+    border:1.5px solid #cbc2a4;
+    border-radius:var(--radius);
+    background:var(--paper-2);
+    color:var(--ink);
+    -webkit-appearance:none;
+  }
+  .field input:focus, .field select:focus{
+    outline:none;
+    border-color:var(--rule);
+    background:var(--white);
+  }
+  .field .fixed-value{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:17px;
+    font-weight:500;
+    padding:10px 12px;
+    border:1.5px solid #cbc2a4;
+    border-radius:var(--radius);
+    background:var(--rule-faint);
+    color:var(--ink-soft);
+  }
+  .row2{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+  }
+  .adv-toggle{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    background:none;
+    border:none;
+    text-decoration:underline;
+    text-underline-offset:3px;
+    padding:0;
+    cursor:pointer;
+    margin-bottom:10px;
+  }
+  .adv-block{ display:none; }
+  .adv-block.open{ display:block; }
+
+  /* Result ticket */
+  .ticket{
+    background:var(--ink);
+    color:var(--paper);
+    border-radius:var(--radius);
+    padding:22px;
+    margin-bottom:22px;
+    position:relative;
+    overflow:hidden;
+  }
+  .ticket-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:#a8b0c4;
+    margin-bottom:6px;
+  }
+  .ticket-price{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:44px;
+    font-weight:700;
+    line-height:1.1;
+    letter-spacing:-0.01em;
+  }
+  .ticket-sub{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:#a8b0c4;
+    margin-top:6px;
+  }
+
+  .breakdown{
+    background:var(--white);
+    border:1.5px solid var(--ink);
+    border-radius:var(--radius);
+    padding:18px 20px;
+    margin-bottom:22px;
+  }
+  .breakdown h2{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin:0 0 14px 0;
+  }
+  .line{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13.5px;
+    padding:7px 0;
+    border-bottom:1px dotted var(--rule-faint);
+  }
+  .line:last-child{ border-bottom:none; }
+  .line .k{ color:var(--ink-soft); }
+  .line .v{ font-weight:600; }
+  .line.final{
+    border-top:1.5px solid var(--ink);
+    margin-top:4px;
+    padding-top:10px;
+  }
+  .line.final .k, .line.final .v{
+    font-size:15px;
+    color:var(--ink);
+    font-weight:700;
+  }
+  .line.gain .v{ color:var(--green); }
+
+  /* promo sticky note */
+  .promo{
+    background:var(--marker);
+    color:var(--marker-ink);
+    border-radius:var(--radius);
+    padding:16px 18px;
+    transform:rotate(-1deg);
+    box-shadow:3px 3px 0 rgba(35,44,66,0.15);
+    margin-bottom:22px;
+  }
+  .promo-tag{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    margin-bottom:10px;
+  }
+  .promo-qty-row{
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-bottom:10px;
+  }
+  .promo-qty-row .qty-lbl{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    margin-right:2px;
+  }
+  .qty-btn{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    font-weight:700;
+    padding:6px 10px;
+    border:1.5px solid var(--marker-ink);
+    border-radius:2px;
+    background:transparent;
+    color:var(--marker-ink);
+    cursor:pointer;
+  }
+  .qty-btn.active{
+    background:var(--marker-ink);
+    color:var(--marker);
+  }
+  .qty-custom{
+    width:56px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    font-weight:600;
+    padding:6px 6px;
+    border:1.5px solid var(--marker-ink);
+    border-radius:2px;
+    background:#fffdf2;
+    color:var(--marker-ink);
+    text-align:center;
+  }
+  .promo-value{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:22px;
+    font-weight:700;
+  }
+  .promo-note{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    margin-top:4px;
+    opacity:.85;
+  }
+  .promo-manual{
+    margin-top:10px;
+    margin-bottom:0;
+  }
+  .promo-manual label{
+    font-size:11px;
+    color:var(--marker-ink);
+  }
+  .promo-manual input{
+    background:#fffdf2;
+    border:1.5px solid var(--marker-ink);
+    font-size:14px;
+    padding:8px 10px;
+    color:var(--marker-ink);
+  }
+
+  .save-btn{
+    width:100%;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:14px;
+    font-weight:600;
+    letter-spacing:.02em;
+    color:var(--white);
+    background:var(--green);
+    border:1.5px solid var(--ink);
+    border-radius:var(--radius);
+    padding:14px 16px;
+    cursor:pointer;
+    box-shadow:3px 3px 0 rgba(35,44,66,0.15);
+    margin-bottom:8px;
+  }
+  .save-btn:active{
+    transform:translate(2px,2px);
+    box-shadow:1px 1px 0 rgba(35,44,66,0.15);
+  }
+  .save-status{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    text-align:center;
+    min-height:18px;
+    margin-bottom:22px;
+    color:var(--ink-soft);
+  }
+  .save-status.ok{ color:var(--green); }
+  .save-status.err{ color:var(--rule); }
+  .save-hint{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    text-align:center;
+    color:var(--ink-soft);
+    margin-top:-4px;
+    margin-bottom:22px;
+    opacity:.75;
+  }
+
+  .etq-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-bottom:10px;
+  }
+  .etq-size{
+    width:100%;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    padding:9px 10px;
+    border:1.5px solid var(--ink);
+    border-radius:var(--radius);
+    background:var(--paper-2);
+    color:var(--ink);
+    margin-bottom:22px;
+  }
+  .etq-btn{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink);
+    background:var(--paper-2);
+    border:1.5px solid var(--ink);
+    border-radius:var(--radius);
+    padding:11px 8px;
+    cursor:pointer;
+  }
+  .etq-btn.combo{
+    background:var(--marker);
+  }
+  .etq-btn:disabled{
+    opacity:.4;
+    cursor:not-allowed;
+  }
+
+  footer{
+    text-align:center;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    color:var(--ink-soft);
+    margin-top:10px;
+  }
+
+  @media (max-width:380px){
+    .ticket-price{ font-size:36px; }
+    .row2{ grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <div class="eyebrow">Lita &amp; Añaños · San Nicolás</div>
+      <h1>Calculadora de Precios</h1>
+    </div>
+    <div class="stamp">USO INTERNO</div>
+  </header>
+
+  <div class="tabs">
+    <button type="button" class="tab-btn active" data-tab="kiosco">🍬 Kiosco</button>
+    <button type="button" class="tab-btn" data-tab="libreria">📎 Librería</button>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- PESTAÑA KIOSCO: IVA fijo 21%, sin descuento de proveedor       -->
+  <!-- ============================================================ -->
+  <section class="tab-panel active" id="tab-kiosco">
+    <div class="layout">
+      <div class="col-form">
+        <div class="card">
+          <h2>Datos del producto</h2>
+
+          <div class="field">
+            <label for="producto-k">Producto <span class="hint">opcional — para el registro</span></label>
+            <input type="text" id="producto-k" placeholder="Ej: Alfajor">
+          </div>
+
+          <div class="field">
+            <label for="costoBulto-k">Costo del bulto <span class="hint">$ sin IVA, según factura</span></label>
+            <input type="number" id="costoBulto-k" inputmode="decimal" placeholder="0" min="0" step="0.01">
+          </div>
+
+          <div class="field">
+            <label for="cantBulto-k">Cantidad por bulto <span class="hint">unidades</span></label>
+            <input type="number" id="cantBulto-k" inputmode="decimal" placeholder="1" min="0.0001" step="1" value="1">
+          </div>
+
+          <button type="button" class="adv-toggle" data-adv-toggle="k">▸ Ajustes (IVA, margen, tolerancia)</button>
+          <div class="adv-block" id="advBlock-k">
+            <div class="row2">
+              <div class="field">
+                <label>IVA <span class="hint">fijo</span></label>
+                <div class="fixed-value">21%</div>
+              </div>
+              <div class="field">
+                <label for="margen-k">Margen <span class="hint">multiplicador</span></label>
+                <input type="number" id="margen-k" inputmode="decimal" min="1" step="0.05" value="1.6">
+              </div>
+            </div>
+            <div class="field">
+              <label for="tolerancia-k">Tolerancia promo 3x <span class="hint">% — default 5%</span></label>
+              <input type="number" id="tolerancia-k" inputmode="decimal" min="0" max="30" step="0.5" value="5">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-results">
+        <div class="ticket">
+          <div class="ticket-label">Precio final al público</div>
+          <div class="ticket-price" id="precioFinal-k">$ 0</div>
+          <div class="ticket-sub" id="margenReal-k">margen real: —</div>
+        </div>
+
+        <div class="promo" id="promoBox-k">
+          <div class="promo-tag">🔖 Promo</div>
+          <div class="promo-qty-row">
+            <span class="qty-lbl">Cantidad:</span>
+            <button type="button" class="qty-btn" data-qty="2">x2</button>
+            <button type="button" class="qty-btn active" data-qty="3">x3</button>
+            <button type="button" class="qty-btn" data-qty="4">x4</button>
+            <button type="button" class="qty-btn" data-qty="6">x6</button>
+            <input type="number" id="promoQty-k" class="qty-custom" min="2" max="20" step="1" value="3">
+          </div>
+          <div class="promo-value" id="promoValue-k">3 x $ 0</div>
+          <div class="promo-note" id="promoNote-k"></div>
+          <div class="field promo-manual">
+            <label for="promoManual-k">Precio promo manual <span class="hint">opcional, pisa la sugerencia</span></label>
+            <input type="number" id="promoManual-k" min="0" step="1" placeholder="automático">
+          </div>
+        </div>
+
+        <select class="etq-size" id="etqSize-k">
+          <option value="5x3">Etiqueta 5 x 3 cm</option>
+          <option value="7x4" selected>Etiqueta 7 x 4 cm (recomendado)</option>
+          <option value="10x6">Etiqueta 10 x 6 cm</option>
+        </select>
+
+        <button type="button" class="save-btn" id="saveBtn-k">💾 Guardar registro en Sheet</button>
+        <div class="save-status" id="saveStatus-k"></div>
+        <div class="save-hint">Se guarda solo cuando modificás el costo del bulto</div>
+
+        <div class="etq-row">
+          <button type="button" class="etq-btn" id="etqPrecioBtn-k">🏷️ Etiqueta precio</button>
+          <button type="button" class="etq-btn combo" id="etqComboBtn-k" disabled>🏷️ Etiqueta combo</button>
+        </div>
+
+        <div class="breakdown">
+          <h2>Desglose del cálculo</h2>
+          <div class="line"><span class="k">Costo unitario (bulto ÷ cantidad)</span><span class="v" id="lCostoUnit-k">$ 0</span></div>
+          <div class="line"><span class="k">Costo con IVA (21%)</span><span class="v" id="lCostoIva-k">$ 0</span></div>
+          <div class="line"><span class="k">Precio base (costo IVA × margen)</span><span class="v" id="lBaseCrudo-k">$ 0</span></div>
+          <div class="line final"><span class="k">Precio final (redondeo ↑ a $100)</span><span class="v" id="lFinal-k">$ 0</span></div>
+          <div class="line gain"><span class="k">Ganancia por unidad</span><span class="v" id="lGanancia-k">$ 0</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- PESTAÑA LIBRERÍA: IVA seleccionable + descuento de proveedor  -->
+  <!-- ============================================================ -->
+  <section class="tab-panel" id="tab-libreria">
+    <div class="layout">
+      <div class="col-form">
+        <div class="card">
+          <h2>Datos del producto</h2>
+
+          <div class="field">
+            <label for="producto-l">Producto <span class="hint">opcional — para el registro</span></label>
+            <input type="text" id="producto-l" placeholder="Ej: Resma A4 75g">
+          </div>
+
+          <div class="field">
+            <label for="costoBulto-l">Costo del bulto <span class="hint">$ sin IVA, según factura</span></label>
+            <input type="number" id="costoBulto-l" inputmode="decimal" placeholder="0" min="0" step="0.01">
+          </div>
+
+          <div class="field">
+            <label for="cantBulto-l">Cantidad por bulto <span class="hint">unidades</span></label>
+            <input type="number" id="cantBulto-l" inputmode="decimal" placeholder="1" min="0.0001" step="1" value="1">
+          </div>
+
+          <div class="field">
+            <label for="descuento-l">Descuento de proveedor <span class="hint">% — antes del IVA</span></label>
+            <input type="number" id="descuento-l" inputmode="decimal" min="0" max="100" step="0.5" value="0">
+          </div>
+
+          <button type="button" class="adv-toggle" data-adv-toggle="l">▸ Ajustes (IVA, margen, tolerancia)</button>
+          <div class="adv-block" id="advBlock-l">
+            <div class="row2">
+              <div class="field">
+                <label for="iva-l">IVA <span class="hint">%</span></label>
+                <select id="iva-l">
+                  <option value="0">0%</option>
+                  <option value="10.5">10,5%</option>
+                  <option value="21" selected>21%</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="margen-l">Margen <span class="hint">multiplicador</span></label>
+                <input type="number" id="margen-l" inputmode="decimal" min="1" step="0.05" value="1.6">
+              </div>
+            </div>
+            <div class="field">
+              <label for="tolerancia-l">Tolerancia promo 3x <span class="hint">% — default 5%</span></label>
+              <input type="number" id="tolerancia-l" inputmode="decimal" min="0" max="30" step="0.5" value="5">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-results">
+        <div class="ticket">
+          <div class="ticket-label">Precio final al público</div>
+          <div class="ticket-price" id="precioFinal-l">$ 0</div>
+          <div class="ticket-sub" id="margenReal-l">margen real: —</div>
+        </div>
+
+        <div class="promo" id="promoBox-l">
+          <div class="promo-tag">🔖 Promo</div>
+          <div class="promo-qty-row">
+            <span class="qty-lbl">Cantidad:</span>
+            <button type="button" class="qty-btn" data-qty="2">x2</button>
+            <button type="button" class="qty-btn active" data-qty="3">x3</button>
+            <button type="button" class="qty-btn" data-qty="4">x4</button>
+            <button type="button" class="qty-btn" data-qty="6">x6</button>
+            <input type="number" id="promoQty-l" class="qty-custom" min="2" max="20" step="1" value="3">
+          </div>
+          <div class="promo-value" id="promoValue-l">3 x $ 0</div>
+          <div class="promo-note" id="promoNote-l"></div>
+          <div class="field promo-manual">
+            <label for="promoManual-l">Precio promo manual <span class="hint">opcional, pisa la sugerencia</span></label>
+            <input type="number" id="promoManual-l" min="0" step="1" placeholder="automático">
+          </div>
+        </div>
+
+        <select class="etq-size" id="etqSize-l">
+          <option value="5x3">Etiqueta 5 x 3 cm</option>
+          <option value="7x4" selected>Etiqueta 7 x 4 cm (recomendado)</option>
+          <option value="10x6">Etiqueta 10 x 6 cm</option>
+        </select>
+
+        <button type="button" class="save-btn" id="saveBtn-l">💾 Guardar registro en Sheet</button>
+        <div class="save-status" id="saveStatus-l"></div>
+        <div class="save-hint">Se guarda solo cuando modificás el costo del bulto</div>
+
+        <div class="etq-row">
+          <button type="button" class="etq-btn" id="etqPrecioBtn-l">🏷️ Etiqueta precio</button>
+          <button type="button" class="etq-btn combo" id="etqComboBtn-l" disabled>🏷️ Etiqueta combo</button>
+        </div>
+
+        <div class="breakdown">
+          <h2>Desglose del cálculo</h2>
+          <div class="line"><span class="k">Costo unitario (bulto ÷ cantidad)</span><span class="v" id="lCostoUnit-l">$ 0</span></div>
+          <div class="line"><span class="k">Costo con descuento</span><span class="v" id="lCostoDesc-l">$ 0</span></div>
+          <div class="line"><span class="k">Costo con IVA</span><span class="v" id="lCostoIva-l">$ 0</span></div>
+          <div class="line"><span class="k">Precio base (costo IVA × margen)</span><span class="v" id="lBaseCrudo-l">$ 0</span></div>
+          <div class="line final"><span class="k">Precio final (redondeo ↑ a $100)</span><span class="v" id="lFinal-l">$ 0</span></div>
+          <div class="line gain"><span class="k">Ganancia por unidad</span><span class="v" id="lGanancia-l">$ 0</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>Redondeo siempre hacia arriba, en múltiplos de $100 · uso interno de sucursal</footer>
+</div>
+
+<script>
+  // Pegá acá la URL que te da Apps Script al implementar como "Aplicación web"
+  // (termina en /exec).
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx3ZDaWAw-9iMLFmTtmAoEE0Is9hQyC82NNTPmGag4eMwsMQ6DxPFFWLQbcqVzPpL54Xw/exec";
+
+  const $ = id => document.getElementById(id);
+
+  const fmt = n => {
+    if (!isFinite(n)) return '$ 0';
+    return '$ ' + n.toLocaleString('es-AR', {maximumFractionDigits:0});
+  };
+  const fmt2 = n => {
+    if (!isFinite(n)) return '$ 0';
+    return '$ ' + n.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2});
+  };
+
+  function ceilTo100(n){
+    return Math.ceil(n / 100) * 100;
+  }
+
+  // -----------------------------------------------------------------
+  // Config por pestaña. 'kiosco' tiene IVA fijo y sin descuento.
+  // 'libreria' tiene IVA seleccionable y descuento de proveedor.
+  // -----------------------------------------------------------------
+  const secciones = {
+    k: { modo: 'Kiosco',   ivaFijo: 21, tieneDescuento: false },
+    l: { modo: 'Libreria', ivaFijo: null, tieneDescuento: true },
+  };
+
+  const estado = { k: null, l: null };
+
+  function calcular(suf){
+    const cfg = secciones[suf];
+
+    const costoBulto = parseFloat($('costoBulto-' + suf).value) || 0;
+    const cantBulto  = parseFloat($('cantBulto-' + suf).value) || 1;
+    const margen     = parseFloat($('margen-' + suf).value) || 1;
+    const tolerancia = parseFloat($('tolerancia-' + suf).value) || 0;
+    const descuento  = cfg.tieneDescuento ? (parseFloat($('descuento-' + suf).value) || 0) : 0;
+    const iva        = cfg.ivaFijo !== null ? cfg.ivaFijo : (parseFloat($('iva-' + suf).value) || 0);
+
+    const costoUnitario   = costoBulto / cantBulto;
+    const costoConDesc    = costoUnitario * (1 - descuento / 100);
+    const costoConIva     = costoConDesc * (1 + iva / 100);
+    const baseCrudo       = costoConIva * margen;
+    const final           = ceilTo100(baseCrudo);
+    const ganancia        = final - costoConIva;
+    const margenRealPct   = costoConIva > 0 ? ((final - costoConIva) / costoConIva) * 100 : 0;
+
+    $('lCostoUnit-' + suf).textContent = fmt2(costoUnitario);
+    if (cfg.tieneDescuento) $('lCostoDesc-' + suf).textContent = fmt2(costoConDesc);
+    $('lCostoIva-' + suf).textContent  = fmt2(costoConIva);
+    $('lBaseCrudo-' + suf).textContent = fmt2(baseCrudo);
+    $('lFinal-' + suf).textContent     = fmt(final);
+    $('lGanancia-' + suf).textContent  = fmt2(ganancia);
+
+    $('precioFinal-' + suf).textContent = fmt(final);
+    $('margenReal-' + suf).textContent  = `margen real: ${margenRealPct.toFixed(1)}%  ·  ganancia ${fmt2(ganancia)} / unidad`;
+
+    // --- Promo: cantidad elegida por el usuario (x2/x3/x4/x6/otra) ---
+    const promoQty = Math.max(2, parseInt($('promoQty-' + suf).value) || 3);
+    const raw = baseCrudo * promoQty;
+    const nearest100 = Math.round(raw / 100) * 100;
+    const diffPct = nearest100 > 0 ? Math.abs(raw - nearest100) / nearest100 * 100 : 100;
+
+    const manualVal = parseFloat($('promoManual-' + suf).value);
+    const usaManual = manualVal > 0;
+    const promoPrecio = usaManual ? Math.round(manualVal) : nearest100;
+
+    const comboBtn = $('etqComboBtn-' + suf);
+    comboBtn.disabled = !(final > 0);
+
+    $('promoValue-' + suf).textContent = `${promoQty} x ${fmt(promoPrecio)}`;
+    const equivUnit = promoPrecio / promoQty;
+    const ahorra = Math.max((final * promoQty) - promoPrecio, 0);
+    let nota = `equivale a ${fmt2(equivUnit)} c/u · ahorra ${fmt(ahorra)} vs. ${promoQty} sueltas`;
+    if (usaManual) nota = '✏️ precio manual — ' + nota;
+    else if (diffPct <= tolerancia) nota = '✨ valor redondo — ' + nota;
+    $('promoNote-' + suf).textContent = nota;
+
+    document.querySelectorAll(`#promoBox-${suf} .qty-btn`).forEach(b => {
+      b.classList.toggle('active', parseInt(b.dataset.qty) === promoQty);
+    });
+
+    estado[suf] = {
+      modo: cfg.modo,
+      producto: $('producto-' + suf).value.trim(),
+      costoBulto, cantBulto,
+      costoUnitario: +costoUnitario.toFixed(2),
+      descuento, iva, margen,
+      costoConIva: +costoConIva.toFixed(2),
+      precioBase: +baseCrudo.toFixed(2),
+      precioFinal: final,
+      promoQty: promoQty,
+      promoPrecio: promoPrecio,
+      promoValue: `${promoQty} x ${promoPrecio}`
+    };
+    $('saveStatus-' + suf).textContent = '';
+    $('saveStatus-' + suf).className = 'save-status';
+  }
+
+  function guardarRegistro(suf, origen){
+    const status = $('saveStatus-' + suf);
+    const calculo = estado[suf];
+
+    if (!SCRIPT_URL || SCRIPT_URL.includes('PEGA_AQUI')) {
+      status.textContent = '⚠ Falta configurar el link de Apps Script en el código';
+      status.className = 'save-status err';
+      return;
+    }
+    if (!calculo || !calculo.costoBulto) {
+      if (origen === 'auto') return;
+      status.textContent = '⚠ Ingresá un costo antes de guardar';
+      status.className = 'save-status err';
+      return;
+    }
+
+    status.textContent = 'Guardando...';
+    status.className = 'save-status';
+
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(calculo)
+    })
+      .then(() => {
+        status.textContent = `✓ Guardado — ${fmt(calculo.precioFinal)}${calculo.producto ? ' · ' + calculo.producto : ''}`;
+        status.className = 'save-status ok';
+      })
+      .catch(() => {
+        status.textContent = '✗ Error de red — no se guardó';
+        status.className = 'save-status err';
+      });
+  }
+
+  // ===================================================================
+  // GENERADOR DE ETIQUETAS (canvas -> JPG descargable)
+  // Diseño: fondo amarillo retail (#FDD835), texto negro en mayúsculas,
+  // precio en tipografía Montserrat Black gigante con contorno blanco
+  // ajustado (silueta, no caja). Layout dinámico: 2 líneas si es precio
+  // regular, 3 líneas si es promo (con leyenda de PVP unitario).
+  // Tamaño físico real (cm) renderizado a 300 DPI para que la impresora
+  // de Windows no la deforme al escalarla.
+  // ===================================================================
+  const COLOR_BG_KIOSK = '#FDD835';
+  const COLOR_TEXT = '#000000';
+  const COLOR_OUTLINE = '#FFFFFF';
+  const DPI = 300;
+
+  function cmToPx(cm){ return Math.round(cm * DPI / 2.54); }
+
+  async function precargarFuentes(){
+    const specs = [
+      '900 60px Montserrat', '800 60px Montserrat', '700 60px Montserrat', '600 40px Montserrat',
+    ];
+    try {
+      await Promise.all(specs.map(s => document.fonts.load(s)));
+      await document.fonts.ready;
+    } catch (e) { /* si falla, sigue con fuente de respaldo */ }
+  }
+
+  // Ajusta tamaño de fuente (sin contorno) al ancho máximo disponible
+  function fitFontSize(ctx, text, maxWidth, family, weight, startSize, minSize){
+    let size = startSize;
+    while (size > minSize){
+      ctx.font = `${weight} ${size}px ${family}`;
+      if (ctx.measureText(text).width <= maxWidth) break;
+      size -= 2;
+    }
+    ctx.font = `${weight} ${size}px ${family}`;
+    return size;
+  }
+
+  // Ajusta tamaño de fuente considerando el contorno (stroke) grueso,
+  // tanto en ancho como en alto disponible del bloque.
+  function fitOutlinedFontSize(ctx, text, maxWidth, maxHeight, family, weight, startSize, minSize, outlineRatio){
+    let size = startSize;
+    while (size > minSize){
+      ctx.font = `${weight} ${size}px ${family}`;
+      const lineWidth = size * outlineRatio;
+      const w = ctx.measureText(text).width + lineWidth * 2;
+      const h = size * 0.80; // alto aproximado de mayúsculas en fuente bold
+      if (w <= maxWidth && h <= maxHeight) break;
+      size -= 4;
+    }
+    ctx.font = `${weight} ${size}px ${family}`;
+    return size;
+  }
+
+  function dibujarTextoConContorno(ctx, text, cx, cy, size, outlineRatio){
+    ctx.lineJoin = 'round';
+    ctx.miterLimit = 2;
+    ctx.lineWidth = size * outlineRatio;
+    ctx.strokeStyle = COLOR_OUTLINE;
+    ctx.strokeText(text, cx, cy);
+    ctx.fillStyle = COLOR_TEXT;
+    ctx.fillText(text, cx, cy);
+  }
+
+  async function generarEtiqueta(suf, tipo){
+    const calculo = estado[suf];
+    if (!calculo || !calculo.precioFinal){
+      alert('Ingresá un costo y calculá el precio antes de generar la etiqueta.');
+      return;
+    }
+
+    await precargarFuentes();
+
+    const [cmW, cmH] = $('etqSize-' + suf).value.split('x').map(Number);
+    const W = cmToPx(cmW), H = cmToPx(cmH);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = COLOR_BG_KIOSK;
+    ctx.fillRect(0, 0, W, H);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const padX = W * 0.06;
+    const producto = (calculo.producto || 'PRODUCTO').toUpperCase();
+
+    if (tipo === 'precio'){
+      // ESCENARIO A: 2 líneas — descripción arriba, precio dominante abajo
+      const descY = H * 0.16;
+      fitFontSize(ctx, producto, W - padX * 2, 'Montserrat', 600, H * 0.15, H * 0.05);
+      ctx.fillStyle = COLOR_TEXT;
+      ctx.fillText(producto, W / 2, descY);
+
+      const priceText = `$${calculo.precioFinal.toLocaleString('es-AR')}`;
+      const priceCY = H * 0.60;
+      const size = fitOutlinedFontSize(ctx, priceText, W - padX * 1.2, H * 0.62, 'Montserrat', 900, H * 0.85, H * 0.2, 0.15);
+      dibujarTextoConContorno(ctx, priceText, W / 2, priceCY, size, 0.15);
+
+    } else {
+      // ESCENARIO B: 3 líneas — descripción x cantidad / promo dominante / PVP unitario
+      const descTexto = `${producto} X ${calculo.promoQty}`;
+      const descY = H * 0.12;
+      fitFontSize(ctx, descTexto, W - padX * 2, 'Montserrat', 600, H * 0.11, H * 0.04);
+      ctx.fillStyle = COLOR_TEXT;
+      ctx.fillText(descTexto, W / 2, descY);
+
+      const promoText = `$${calculo.promoPrecio.toLocaleString('es-AR')}`;
+      const promoCY = H * 0.46;
+      const size = fitOutlinedFontSize(ctx, promoText, W - padX * 1.2, H * 0.42, 'Montserrat', 900, H * 0.60, H * 0.15, 0.15);
+      dibujarTextoConContorno(ctx, promoText, W / 2, promoCY, size, 0.15);
+
+      const legendTexto = `PRECIO X UNIDAD (PVP): $${calculo.precioFinal.toLocaleString('es-AR')}`;
+      const legendY = H * 0.85;
+      fitFontSize(ctx, legendTexto, W - padX * 2, 'Montserrat', 600, H * 0.075, H * 0.035);
+      ctx.fillStyle = COLOR_TEXT;
+      ctx.fillText(legendTexto, W / 2, legendY);
+    }
+
+    const nombreArchivo = `etiqueta_${tipo}_${(calculo.producto || 'producto').toLowerCase().replace(/[^a-z0-9]+/g, '_').slice(0, 30)}.jpg`;
+    canvas.toBlob(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = nombreArchivo;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    }, 'image/jpeg', 0.95);
+  }
+
+  // --- Bindeo de eventos para cada pestaña ---
+  ['k', 'l'].forEach(suf => {
+    const panel = suf === 'k' ? $('tab-kiosco') : $('tab-libreria');
+    panel.querySelectorAll('input, select').forEach(inp => {
+      inp.addEventListener('input', () => calcular(suf));
+      if (inp.tagName === 'SELECT') inp.addEventListener('change', () => calcular(suf));
+    });
+    $('costoBulto-' + suf).addEventListener('change', () => guardarRegistro(suf, 'auto'));
+    $('saveBtn-' + suf).addEventListener('click', () => guardarRegistro(suf, 'manual'));
+    $('etqPrecioBtn-' + suf).addEventListener('click', () => generarEtiqueta(suf, 'precio'));
+    $('etqComboBtn-' + suf).addEventListener('click', () => generarEtiqueta(suf, 'combo'));
+    panel.querySelectorAll('.qty-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        $('promoQty-' + suf).value = btn.dataset.qty;
+        calcular(suf);
+      });
+    });
+
+    document.querySelector(`[data-adv-toggle="${suf}"]`).addEventListener('click', (e) => {
+      const block = $('advBlock-' + suf);
+      const open = block.classList.toggle('open');
+      e.target.textContent = (open ? '▾' : '▸') + ' Ajustes (IVA, margen, tolerancia)';
+    });
+
+    calcular(suf);
+  });
+
+  // --- Tabs ---
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      $('tab-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>
