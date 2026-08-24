@@ -439,6 +439,49 @@
     cursor:not-allowed;
   }
 
+  .tipo-toggle{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+  .tipo-btn{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    font-weight:600;
+    padding:10px 8px;
+    border:1.5px solid var(--ink);
+    border-radius:var(--radius);
+    background:var(--paper-2);
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .tipo-btn.active{
+    background:var(--ink);
+    color:var(--paper);
+  }
+  .preview-wrap{
+    background:var(--white);
+    border:1.5px solid var(--ink);
+    border-radius:var(--radius);
+    padding:18px;
+  }
+  .preview-wrap h2{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin:0 0 14px 0;
+  }
+  #previewCanvasE{
+    width:100%;
+    height:auto;
+    display:block;
+    border:1.5px solid var(--ink);
+    border-radius:4px;
+    box-shadow:4px 4px 0 rgba(35,44,66,0.08);
+  }
+
   footer{
     text-align:center;
     font-family:'IBM Plex Mono', monospace;
@@ -467,6 +510,7 @@
   <div class="tabs">
     <button type="button" class="tab-btn active" data-tab="kiosco">🍬 Kiosco</button>
     <button type="button" class="tab-btn" data-tab="libreria">📎 Librería</button>
+    <button type="button" class="tab-btn" data-tab="etiquetas">🏷️ Etiquetas</button>
   </div>
 
   <!-- ============================================================ -->
@@ -666,6 +710,72 @@
           <div class="line"><span class="k">Precio base (costo IVA × margen)</span><span class="v" id="lBaseCrudo-l">$ 0</span></div>
           <div class="line final"><span class="k">Precio final (redondeo ↑ a $100)</span><span class="v" id="lFinal-l">$ 0</span></div>
           <div class="line gain"><span class="k">Ganancia por unidad</span><span class="v" id="lGanancia-l">$ 0</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- PESTAÑA ETIQUETAS: 100% manual, sin calculadora de precio     -->
+  <!-- ============================================================ -->
+  <section class="tab-panel" id="tab-etiquetas">
+    <div class="layout">
+      <div class="col-form">
+        <div class="card">
+          <h2>Datos de la etiqueta</h2>
+
+          <div class="field">
+            <label for="producto-e">Producto</label>
+            <input type="text" id="producto-e" placeholder="Ej: Alfajor Jorgito 55g">
+          </div>
+
+          <div class="field">
+            <label>Tipo de etiqueta</label>
+            <div class="tipo-toggle">
+              <button type="button" class="tipo-btn active" data-tipo="precio" id="tipoBtnPrecio-e">Precio simple</button>
+              <button type="button" class="tipo-btn" data-tipo="combo" id="tipoBtnCombo-e">Combo / Promo</button>
+            </div>
+          </div>
+
+          <div id="bloquePrecio-e">
+            <div class="field">
+              <label for="precioFinalE">Precio final <span class="hint">$</span></label>
+              <input type="number" id="precioFinalE" min="0" step="1" placeholder="0">
+            </div>
+          </div>
+
+          <div id="bloqueCombo-e" style="display:none">
+            <div class="field">
+              <label for="promoQtyE">Cantidad de la promo</label>
+              <input type="number" id="promoQtyE" min="2" step="1" value="3">
+            </div>
+            <div class="field">
+              <label for="promoPrecioE">Precio total de la promo <span class="hint">$</span></label>
+              <input type="number" id="promoPrecioE" min="0" step="1" placeholder="0">
+            </div>
+            <div class="field">
+              <label for="precioUnitE">Precio unitario (PVP) <span class="hint">para la leyenda</span></label>
+              <input type="number" id="precioUnitE" min="0" step="1" placeholder="0">
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="etqSize-e">Tamaño de la etiqueta</label>
+            <select class="etq-size" id="etqSize-e" style="margin-bottom:0;">
+              <option value="5x3">5 x 3 cm</option>
+              <option value="7x4" selected>7 x 4 cm (recomendado)</option>
+              <option value="10x6">10 x 6 cm</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="button" class="save-btn" id="etqGenerarE" style="margin-bottom:22px;">🏷️ Descargar etiqueta (JPG)</button>
+      </div>
+
+      <div class="col-results">
+        <div class="preview-wrap">
+          <h2>Vista previa</h2>
+          <canvas id="previewCanvasE"></canvas>
         </div>
       </div>
     </div>
@@ -874,19 +984,8 @@
     ctx.fillText(text, cx, cy);
   }
 
-  async function generarEtiqueta(suf, tipo){
-    const calculo = estado[suf];
-    if (!calculo || !calculo.precioFinal){
-      alert('Ingresá un costo y calculá el precio antes de generar la etiqueta.');
-      return;
-    }
-
-    await precargarFuentes();
-
-    const [cmW, cmH] = $('etqSize-' + suf).value.split('x').map(Number);
+  async function dibujarEtiquetaEnCanvas(canvas, datos, tipo, cmW, cmH){
     const W = cmToPx(cmW), H = cmToPx(cmH);
-
-    const canvas = document.createElement('canvas');
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext('2d');
 
@@ -896,7 +995,7 @@
     ctx.textBaseline = 'middle';
 
     const padX = W * 0.06;
-    const producto = (calculo.producto || 'PRODUCTO').toUpperCase();
+    const producto = (datos.producto || 'PRODUCTO').toUpperCase();
 
     if (tipo === 'precio'){
       // ESCENARIO A: 2 líneas — descripción arriba, precio dominante abajo
@@ -905,32 +1004,33 @@
       ctx.fillStyle = COLOR_TEXT;
       ctx.fillText(producto, W / 2, descY);
 
-      const priceText = `$${calculo.precioFinal.toLocaleString('es-AR')}`;
+      const priceText = `$${datos.precioFinal.toLocaleString('es-AR')}`;
       const priceCY = H * 0.60;
       const size = fitOutlinedFontSize(ctx, priceText, W - padX * 1.2, H * 0.62, 'Montserrat', 900, H * 0.85, H * 0.2, 0.15);
       dibujarTextoConContorno(ctx, priceText, W / 2, priceCY, size, 0.15);
 
     } else {
       // ESCENARIO B: 3 líneas — descripción x cantidad / promo dominante / PVP unitario
-      const descTexto = `${producto} X ${calculo.promoQty}`;
+      const descTexto = `${producto} X ${datos.promoQty}`;
       const descY = H * 0.12;
       fitFontSize(ctx, descTexto, W - padX * 2, 'Montserrat', 600, H * 0.11, H * 0.04);
       ctx.fillStyle = COLOR_TEXT;
       ctx.fillText(descTexto, W / 2, descY);
 
-      const promoText = `$${calculo.promoPrecio.toLocaleString('es-AR')}`;
+      const promoText = `$${datos.promoPrecio.toLocaleString('es-AR')}`;
       const promoCY = H * 0.46;
       const size = fitOutlinedFontSize(ctx, promoText, W - padX * 1.2, H * 0.42, 'Montserrat', 900, H * 0.60, H * 0.15, 0.15);
       dibujarTextoConContorno(ctx, promoText, W / 2, promoCY, size, 0.15);
 
-      const legendTexto = `PRECIO X UNIDAD (PVP): $${calculo.precioFinal.toLocaleString('es-AR')}`;
+      const legendTexto = `PRECIO X UNIDAD (PVP): $${datos.precioFinal.toLocaleString('es-AR')}`;
       const legendY = H * 0.85;
       fitFontSize(ctx, legendTexto, W - padX * 2, 'Montserrat', 600, H * 0.075, H * 0.035);
       ctx.fillStyle = COLOR_TEXT;
       ctx.fillText(legendTexto, W / 2, legendY);
     }
+  }
 
-    const nombreArchivo = `etiqueta_${tipo}_${(calculo.producto || 'producto').toLowerCase().replace(/[^a-z0-9]+/g, '_').slice(0, 30)}.jpg`;
+  function descargarCanvas(canvas, nombreArchivo){
     canvas.toBlob(blob => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -938,6 +1038,22 @@
       document.body.appendChild(a); a.click(); a.remove();
       URL.revokeObjectURL(url);
     }, 'image/jpeg', 0.95);
+  }
+
+  async function generarEtiqueta(suf, tipo){
+    const calculo = estado[suf];
+    if (!calculo || !calculo.precioFinal){
+      alert('Ingresá un costo y calculá el precio antes de generar la etiqueta.');
+      return;
+    }
+
+    await precargarFuentes();
+    const [cmW, cmH] = $('etqSize-' + suf).value.split('x').map(Number);
+    const canvas = document.createElement('canvas');
+    await dibujarEtiquetaEnCanvas(canvas, calculo, tipo, cmW, cmH);
+
+    const nombreArchivo = `etiqueta_${tipo}_${(calculo.producto || 'producto').toLowerCase().replace(/[^a-z0-9]+/g, '_').slice(0, 30)}.jpg`;
+    descargarCanvas(canvas, nombreArchivo);
   }
 
   // --- Bindeo de eventos para cada pestaña ---
@@ -975,6 +1091,70 @@
       btn.classList.add('active');
       $('tab-' + btn.dataset.tab).classList.add('active');
     });
+  });
+
+  // ===================================================================
+  // PESTAÑA ETIQUETAS: generación 100% manual (sin calculadora)
+  // ===================================================================
+  let tipoActualE = 'precio';
+
+  function leerDatosE(){
+    const producto = $('producto-e').value.trim();
+    const [cmW, cmH] = $('etqSize-e').value.split('x').map(Number);
+
+    if (tipoActualE === 'precio'){
+      const precioFinal = parseFloat($('precioFinalE').value) || 0;
+      if (!precioFinal) return { valido: false, error: 'Ingresá el precio final.' };
+      return { valido: true, tipo: 'precio', cmW, cmH, datos: { producto, precioFinal } };
+    } else {
+      const promoQty = Math.max(2, parseInt($('promoQtyE').value) || 2);
+      const promoPrecio = parseFloat($('promoPrecioE').value) || 0;
+      const precioFinal = parseFloat($('precioUnitE').value) || 0;
+      if (!promoPrecio) return { valido: false, error: 'Ingresá el precio total de la promo.' };
+      return { valido: true, tipo: 'combo', cmW, cmH, datos: { producto, promoQty, promoPrecio, precioFinal } };
+    }
+  }
+
+  let previewTimeoutE = null;
+  function actualizarPreviewE(){
+    clearTimeout(previewTimeoutE);
+    previewTimeoutE = setTimeout(async () => {
+      const r = leerDatosE();
+      if (!r.valido) return;
+      await precargarFuentes();
+      await dibujarEtiquetaEnCanvas($('previewCanvasE'), r.datos, r.tipo, r.cmW, r.cmH);
+    }, 250);
+  }
+
+  $('tipoBtnPrecio-e').addEventListener('click', () => {
+    tipoActualE = 'precio';
+    $('tipoBtnPrecio-e').classList.add('active');
+    $('tipoBtnCombo-e').classList.remove('active');
+    $('bloquePrecio-e').style.display = 'block';
+    $('bloqueCombo-e').style.display = 'none';
+    actualizarPreviewE();
+  });
+  $('tipoBtnCombo-e').addEventListener('click', () => {
+    tipoActualE = 'combo';
+    $('tipoBtnCombo-e').classList.add('active');
+    $('tipoBtnPrecio-e').classList.remove('active');
+    $('bloqueCombo-e').style.display = 'block';
+    $('bloquePrecio-e').style.display = 'none';
+    actualizarPreviewE();
+  });
+
+  document.querySelectorAll('#tab-etiquetas input, #tab-etiquetas select').forEach(inp => {
+    inp.addEventListener('input', actualizarPreviewE);
+    if (inp.tagName === 'SELECT') inp.addEventListener('change', actualizarPreviewE);
+  });
+
+  $('etqGenerarE').addEventListener('click', async () => {
+    const r = leerDatosE();
+    if (!r.valido) { alert(r.error); return; }
+    await precargarFuentes();
+    await dibujarEtiquetaEnCanvas($('previewCanvasE'), r.datos, r.tipo, r.cmW, r.cmH);
+    const nombreArchivo = `etiqueta_${r.tipo}_${(r.datos.producto || 'producto').toLowerCase().replace(/[^a-z0-9]+/g, '_').slice(0, 30)}.jpg`;
+    descargarCanvas($('previewCanvasE'), nombreArchivo);
   });
 </script>
 </body>
